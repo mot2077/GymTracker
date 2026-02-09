@@ -8,6 +8,7 @@ import 'package:gym_tracker/features/home/home_screen.dart';
 import 'package:gym_tracker/features/stats/stats_screen.dart';
 
 import '../../features/exercises/exercise_edit_screen.dart';
+import '../../features/routines/data/routine_repository.dart';
 import '../../features/routines/routine_edit_screen.dart';
 import '../database/app_database.dart';
 
@@ -64,7 +65,10 @@ final goRouter = GoRouter(
     // Neuer Create Screen für Routinen (Top Level Route, verdeckt Bottom Bar)
     GoRoute(
       path: '/create-routine',
-      builder: (context, state) => const RoutineEditScreen(),
+      builder: (context, state) {
+        final routine = state.extra as RoutineWithExercises?;
+        return RoutineEditScreen(routineData: routine);
+      },
     ),
 
     // Neuer Edit Screen (Top Level Route, verdeckt Bottom Bar)

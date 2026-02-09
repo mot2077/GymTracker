@@ -62,9 +62,7 @@ class HomeScreen extends ConsumerWidget {
                           title: routineData.routine.name,
                           subtitle: "${routineData.exercises.length} Exercises",
                           onTap: () {
-                            // TODO: Öffne Workout Detail / Start
-                            // Aktuell öffnen wir den Editor zum Bearbeiten
-                            context.push('/create-routine');
+                            context.push('/create-routine', extra: routineData);
                           },
                         ),
                       );

@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gym_tracker/core/database/app_database.dart';
 import 'package:gym_tracker/features/exercises/data/exercise_repository.dart';
 import 'package:gym_tracker/features/routines/data/routine_repository.dart';
 import 'package:gym_tracker/features/routines/exercise_selection_screen.dart';
 
 class RoutineEditScreen extends ConsumerStatefulWidget {
-  // Wenn null, erstellen wir neu.
-  final RoutineWithExercises? routineData;
+  final RoutineWithExercises? routineData; // Null = Neu, Objekt = Bearbeiten
 
   const RoutineEditScreen({super.key, this.routineData});
 
@@ -21,20 +19,21 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
   late TextEditingController _nameController;
   late TextEditingController _descController;
 
-  // Die temporäre Liste der Übungen in dieser Routine
-  List<Exercise> _selectedExercises = [];
+  // Unsere Liste enthält jetzt Übung + Sätze
+  List<RoutineExerciseData> _selectedExercises = [];
+
+  bool get _isEditing => widget.routineData != null;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.routineData?.routine.name ?? "",
-    );
+    _nameController =
+        TextEditingController(text: widget.routineData?.routine.name ?? "");
     _descController = TextEditingController(
-      text: widget.routineData?.routine.description ?? "",
-    );
+        text: widget.routineData?.routine.description ?? "");
 
-    if (widget.routineData != null) {
+    if (_isEditing) {
+      // Kopie der Liste erstellen, damit wir bearbeiten können
       _selectedExercises = List.from(widget.routineData!.exercises);
     }
   }
@@ -46,16 +45,12 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
     super.dispose();
   }
 
-  // Öffnet den Picker und aktualisiert die Liste
   Future<void> _pickExercises() async {
-    // Wir brauchen die komplette Liste aller Übungen, um die IDs wieder in Objekte umzuwandeln
     final allExercises = await ref.read(exercisesStreamProvider.future);
-
-    final currentIds = _selectedExercises.map((e) => e.id).toList();
+    final currentIds = _selectedExercises.map((e) => e.exercise.id).toList();
 
     if (!mounted) return;
 
-    // Navigiere zum Picker (wir nutzen push, da es ein modal sein könnte)
     final resultIds = await Navigator.push<List<int>>(
       context,
       MaterialPageRoute(
@@ -66,19 +61,18 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
 
     if (resultIds != null) {
       setState(() {
-        // Wir behalten die Reihenfolge der BEREITS ausgewählten bei und fügen neue hinten an
-        // Das ist etwas tricky:
+        // 1. Gelöschte entfernen
+        _selectedExercises.removeWhere((ex) =>
+        !resultIds.contains(ex.exercise.id));
 
-        // 1. Welche sind neu?
+        // 2. Neue hinzufügen (mit Standard 1 Satz)
+        // Wir filtern IDs, die noch NICHT in der aktuellen Liste sind
         final newIds = resultIds.where((id) => !currentIds.contains(id));
 
-        // 2. Welche wurden gelöscht?
-        _selectedExercises.removeWhere((ex) => !resultIds.contains(ex.id));
-
-        // 3. Neue hinzufügen
         for (var id in newIds) {
           final exerciseObj = allExercises.firstWhere((e) => e.id == id);
-          _selectedExercises.add(exerciseObj);
+          _selectedExercises.add(RoutineExerciseData(
+              exercise: exerciseObj, sets: 1)); // Default: 1 Set
         }
       });
     }
@@ -88,30 +82,56 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
     if (_formKey.currentState!.validate()) {
       if (_selectedExercises.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please add at least one exercise.")),
-        );
+            const SnackBar(content: Text("Add at least one exercise")));
         return;
       }
 
-      // Aktuell unterstützen wir nur CREATE, Update kommt später (ist komplexer wegen Reihenfolge)
-      // Für diesen Schritt löschen wir einfach die alte und erstellen neu (dirty hack für prototyping)
-      // oder wir bauen nur Create für jetzt.
-
       final repo = ref.read(routineRepositoryProvider);
 
-      if (widget.routineData != null) {
-        // TODO: Sauberes Update implementieren.
-        // Für jetzt: Löschen und Neu erstellen (Achtung: History Verweise könnten verloren gehen,
-        // aber wir haben noch keine History).
-        await repo.deleteRoutine(widget.routineData!.routine.id);
+      if (_isEditing) {
+        // UPDATE (ID behalten!)
+        await repo.updateRoutine(
+          routineId: widget.routineData!.routine.id,
+          name: _nameController.text,
+          description: _descController.text,
+          exercises: _selectedExercises,
+        );
+      } else {
+        // CREATE
+        await repo.createRoutine(
+          name: _nameController.text,
+          description: _descController.text,
+          exercises: _selectedExercises,
+        );
       }
 
-      await repo.createRoutine(
-        name: _nameController.text,
-        description: _descController.text,
-        exercises: _selectedExercises,
-      );
+      if (mounted) context.pop();
+    }
+  }
 
+  // Löschen Funktion
+  Future<void> _deleteRoutine() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) =>
+          AlertDialog(
+            title: const Text("Delete Routine?"),
+            content: const Text("Currently active workouts might be affected."),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Cancel")),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text("Delete"),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm == true) {
+      await ref.read(routineRepositoryProvider).deleteRoutine(
+          widget.routineData!.routine.id);
       if (mounted) context.pop();
     }
   }
@@ -120,10 +140,13 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.routineData == null ? "New Routine" : "Edit Routine",
-        ),
-        actions: [IconButton(icon: const Icon(Icons.check), onPressed: _save)],
+        title: Text(_isEditing ? "Edit Routine" : "New Routine"),
+        actions: [
+          if (_isEditing)
+            IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent),
+                onPressed: _deleteRoutine),
+          IconButton(icon: const Icon(Icons.check), onPressed: _save),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -135,19 +158,16 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
                 children: [
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: "Routine Name",
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: "Routine Name",
+                        border: OutlineInputBorder()),
                     validator: (v) => v!.isEmpty ? "Required" : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _descController,
                     decoration: const InputDecoration(
-                      labelText: "Description (Optional)",
-                      border: OutlineInputBorder(),
-                    ),
+                        labelText: "Description (Optional)",
+                        border: OutlineInputBorder()),
                   ),
                 ],
               ),
@@ -158,47 +178,82 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Exercises",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  const Text("Exercises & Sets", style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
                   TextButton.icon(
                     onPressed: _pickExercises,
                     icon: const Icon(Icons.add),
-                    label: const Text("Add"),
-                  ),
+                    label: const Text("Manage"),
+                  )
                 ],
               ),
             ),
 
-            // Drag and Drop Liste
+            // Drag & Drop Liste mit Set-Counter
             Expanded(
               child: ReorderableListView.builder(
+                padding: const EdgeInsets.only(bottom: 80),
                 itemCount: _selectedExercises.length,
                 onReorder: (oldIndex, newIndex) {
                   setState(() {
-                    if (oldIndex < newIndex) {
-                      newIndex -= 1;
-                    }
+                    if (oldIndex < newIndex) newIndex -= 1;
                     final item = _selectedExercises.removeAt(oldIndex);
                     _selectedExercises.insert(newIndex, item);
                   });
                 },
                 itemBuilder: (context, index) {
-                  final ex = _selectedExercises[index];
-                  return ListTile(
-                    key: ValueKey(ex.id),
-                    // Wichtig für ReorderableListView
-                    leading: const Icon(Icons.drag_handle),
-                    title: Text(ex.name),
-                    subtitle: Text(ex.targetMuscleGroup ?? ""),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                      onPressed: () {
-                        setState(() {
-                          _selectedExercises.removeAt(index);
-                        });
-                      },
+                  final data = _selectedExercises[index];
+
+                  return Card(
+                    key: ValueKey(data.exercise.id), // Wichtig für Reorder
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 4),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.only(
+                          left: 16, right: 8, top: 4, bottom: 4),
+                      leading: const Icon(
+                          Icons.drag_handle, color: Colors.grey),
+                      title: Text(data.exercise.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text(data.exercise.targetMuscleGroup ?? "-"),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // SETS COUNTER
+                          const Text("Sets: ", style: TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                          IconButton(
+                            icon: const Icon(
+                                Icons.remove_circle_outline, size: 20),
+                            onPressed: () {
+                              if (data.sets > 1) {
+                                setState(() {
+                                  // Update Set Count
+                                  _selectedExercises[index] =
+                                      data.copyWith(sets: data.sets - 1);
+                                });
+                              }
+                            },
+                          ),
+                          Text(
+                              "${data.sets}",
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                                Icons.add_circle_outline, size: 20),
+                            onPressed: () {
+                              if (data.sets < 10) { // Limit 10 Sets
+                                setState(() {
+                                  _selectedExercises[index] =
+                                      data.copyWith(sets: data.sets + 1);
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
