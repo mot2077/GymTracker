@@ -30,7 +30,8 @@ class ExerciseRepository {
   }
 
   // Eine Übung hinzufügen
-  Future<int> addExercise(String name, String muscle, String equipment) {
+  Future<int> addExercise(String name, String muscle, String equipment,
+      ExerciseLogType logType) {
     return _db
         .into(_db.exercises)
         .insert(
@@ -39,13 +40,19 @@ class ExerciseRepository {
             targetMuscleGroup: Value(muscle),
             primaryEquipment: Value(equipment),
             isCustom: const Value(true),
-            logType: ExerciseLogType.weightReps,
+            logType: logType,
           ),
         );
   }
 
-  // Löschen (Optional für später)
-  Future<void> deleteExercise(int id) {
+  // Update einer existierenden Übung
+  Future<bool> updateExercise(Exercise exercise) {
+    // update(db.exercises).replace(exercise) ersetzt die Zeile komplett
+    return _db.update(_db.exercises).replace(exercise);
+  }
+
+  // Löschen einer Übung
+  Future<int> deleteExercise(int id) {
     return (_db.delete(_db.exercises)..where((t) => t.id.equals(id))).go();
   }
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:gym_tracker/features/exercises/data/exercise_repository.dart';
+
+import '../../core/database/models/exercise_type.dart';
 
 // State für den ausgewählten Filter (null = Alle)
 final selectedMuscleFilterProvider = StateProvider<String?>((ref) => null);
@@ -9,6 +12,41 @@ final exerciseSearchProvider = StateProvider<String>((ref) => '');
 
 class ExercisesScreen extends ConsumerWidget {
   const ExercisesScreen({super.key});
+
+  // Hilfsfunktion für das Icon basierend auf dem Tracking-Typ
+  Widget _buildLeadingIcon(ExerciseLogType type, BuildContext context) {
+    IconData icon;
+    Color color;
+
+    switch (type) {
+      case ExerciseLogType.weightReps:
+        icon = Icons.fitness_center; // Hantel
+        color = Colors.blueAccent;
+        break;
+      case ExerciseLogType.repOnly:
+        icon = Icons.accessibility_new; // Person / Körpergewicht
+        color = Colors.green;
+        break;
+      case ExerciseLogType.timeDistance:
+        icon = Icons.directions_run; // Laufen
+        color = Colors.orange;
+        break;
+      case ExerciseLogType.timeWeight:
+        icon = Icons.timer; // Uhr
+        color = Colors.purple;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15), // Leichter Hintergrund
+        borderRadius: BorderRadius.circular(
+            8), // Eckig statt rund wirkt technischer
+      ),
+      child: Icon(icon, color: color, size: 24),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -125,20 +163,38 @@ class ExercisesScreen extends ConsumerWidget {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final ex = filtered[index];
+
+                    // Logik für den Untertitel: Verbinde Muskel & Equipment
+                    final List<String> subtitleParts = [
+                      ex.targetMuscleGroup ?? "",
+                      ex.primaryEquipment ?? ""
+                    ]
+                        .where((s) => s.isNotEmpty)
+                        .toList(); // Leere Strings filtern
+
+                    final subtitleText = subtitleParts.join(", ");
+
                     return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Theme
-                            .of(context)
-                            .colorScheme
-                            .primaryContainer,
-                        child: Text(ex.name.substring(0, 1).toUpperCase()),
+                      // Neues Icon System statt Buchstaben
+                      leading: _buildLeadingIcon(ex.logType, context),
+
+                      title: Text(
+                        ex.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
-                      title: Text(ex.name),
-                      subtitle: Text(ex.primaryEquipment ?? ""),
-                      trailing: const Icon(Icons.add_circle_outline),
-                      onTap: () {
-                        // TODO: Open Details or Add to Routine
-                      },
+
+                      // Neuer Untertitel (z.B. "Chest • Barbell")
+                      subtitle: Text(
+                        subtitleText,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      ),
+
+                      trailing: IconButton(
+                        icon: const Icon(Icons.more_vert),
+                        onPressed: () =>
+                            context.push('/edit-exercise', extra: ex),
+                      ),
+                      onTap: () => context.push('/edit-exercise', extra: ex),
                     );
                   },
                 );

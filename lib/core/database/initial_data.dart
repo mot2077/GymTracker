@@ -6,7 +6,7 @@ List<ExercisesCompanion> getInitialExercises() {
   return [
     // --- CHEST ---
     ExercisesCompanion.insert(
-      name: 'Bench Press (Barbell)',
+      name: 'Bench Press',
       targetMuscleGroup: const Value('Chest'),
       primaryEquipment: const Value('Barbell'),
       logType: ExerciseLogType.weightReps,
@@ -34,7 +34,7 @@ List<ExercisesCompanion> getInitialExercises() {
 
     // --- LEGS ---
     ExercisesCompanion.insert(
-      name: 'Squat (Barbell)',
+      name: 'Squat',
       targetMuscleGroup: const Value('Legs'),
       primaryEquipment: const Value('Barbell'),
       logType: ExerciseLogType.weightReps,
@@ -48,7 +48,7 @@ List<ExercisesCompanion> getInitialExercises() {
 
     // --- ARMS ---
     ExercisesCompanion.insert(
-      name: 'Bicep Curl (Dumbbell)',
+      name: 'Bicep Curl',
       targetMuscleGroup: const Value('Arms'),
       primaryEquipment: const Value('Dumbbell'),
       logType: ExerciseLogType.weightReps,
