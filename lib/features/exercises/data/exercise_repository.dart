@@ -29,18 +29,23 @@ class ExerciseRepository {
     )..orderBy([(t) => OrderingTerm(expression: t.name)])).watch();
   }
 
-  // Eine Übung hinzufügen
-  Future<int> addExercise(String name, String muscle, String equipment,
-      ExerciseLogType logType) {
+  // Aktualisierte Methode zum Hinzufügen (Create)
+  Future<int> addExercise({
+    required String name,
+    required String targetMuscle,
+    required String equipment,
+    required ExerciseLogType logType, // NEU
+  }) {
     return _db
         .into(_db.exercises)
         .insert(
           ExercisesCompanion.insert(
             name: name,
-            targetMuscleGroup: Value(muscle),
+            targetMuscleGroup: Value(targetMuscle),
             primaryEquipment: Value(equipment),
-            isCustom: const Value(true),
             logType: logType,
+            // NEU
+            isCustom: const Value(true),
           ),
         );
   }
@@ -63,25 +68,5 @@ class ExerciseRepository {
         .insert(
           RoutinesCompanion.insert(name: name, description: Value(description)),
         );
-  }
-
-  // Übungen zu einer Routine hinzufügen
-  Future<void> addExercisesToRoutine(
-    int routineId,
-    List<Exercise> exercises,
-  ) async {
-    await _db.batch((batch) {
-      // Wir gehen durch die Liste und fügen sie mit Index ein
-      for (int i = 0; i < exercises.length; i++) {
-        batch.insert(
-          _db.routineExercises,
-          RoutineExercisesCompanion.insert(
-            routineId: routineId,
-            exerciseId: exercises[i].id,
-            orderIndex: i, // WICHTIG für die Reihenfolge
-          ),
-        );
-      }
-    });
   }
 }

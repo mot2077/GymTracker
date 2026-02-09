@@ -205,6 +205,13 @@ class ExercisesScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Wir rufen die Route auf, aber OHNE extra parameter -> Exercise ist null
+          context.push('/edit-exercise');
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

@@ -65,7 +65,7 @@ final goRouter = GoRouter(
       path: '/edit-exercise',
       builder: (context, state) {
         // Wir holen das Exercise Objekt aus dem "extra" Parameter
-        final exercise = state.extra as Exercise;
+        final exercise = state.extra as Exercise?;
         return ExerciseEditScreen(exercise: exercise);
       },
     ),
