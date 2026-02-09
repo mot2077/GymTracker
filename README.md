@@ -1,55 +1,73 @@
-### 3. 🐙 GitHub Anbindung (Schritt für Schritt)
+# 🏋️ GymTracker
 
-Wir machen das direkt aus Android Studio heraus, das ist am einfachsten.
+Ein Offline-First Fitness-Tracker, entwickelt mit Flutter, um professionelle Analytics-Funktionen ohne Paywalls zu bieten.
 
-**Vorraussetzung:** Du hast einen GitHub Account.
+## 🎯 Projektziel
+Entwicklung einer performanten, lokalen Fitness-App, die es ermöglicht, Workouts zu tracken, eigene Routinen zu erstellen und detaillierte Fortschrittsanalysen (Volumen, 1RM, Split-Verteilung) einzusehen.
 
-1.  **Repository auf GitHub erstellen:**
-    * Gehe auf [github.com/new](https://github.com/new).
-    * Name: `gym-tracker` (oder wie du willst).
-    * Description: "Flutter Fitness App".
-    * **WICHTIG:** Wähle "Public" oder "Private".
-    * Lass "Add a README file", ".gitignore" und "License" **leer** (Das haben wir lokal schon durch Flutter).
-    * Klicke **Create repository**.
-    * Kopiere die URL (HTTPS), die dir angezeigt wird (z.B. `https://github.com/DeinName/gym-tracker.git`).
+## 🏗️ Tech Stack & Architektur
 
-2.  **Git im Projekt initialisieren:**
-    * In Android Studio: Oben im Menü auf **VCS** (oder **Git**, je nach Version) -> **Enable Version Control Integration**.
-    * Wähle **Git** aus dem Dropdown und klicke **OK**.
-    * Alle Dateinamen im Projekt-Explorer werden nun rot (bedeutet: noch nicht getrackt).
+Dieses Projekt folgt der **Clean Architecture** und nutzt einen **Feature-First** Ansatz.
 
-3.  **Dateien hinzufügen & erster Commit:**
-    * Öffne den Reiter **Commit** (meistens links am Rand) oder drücke `Strg + K` (Mac: `Cmd + K`).
-    * Hake alle Dateien an ("Unversioned Files").
-    * Commit Message: `Initial commit: Project setup`.
-    * Klicke auf **Commit**.
+| Bereich | Technologie | Begründung |
+| :--- | :--- | :--- |
+| **Framework** | Flutter & Dart | Cross-Platform, High-Performance Rendering |
+| **State Management** | **Riverpod** | Compile-safe, testbar, entkoppelt UI von Logik |
+| **Datenbank** | **Drift (SQLite)** | Relational (SQL), Typ-sicher, performant für komplexe Statistiken |
+| **Navigation** | **GoRouter** | Deep-Linking Support, deklaratives Routing |
+| **Charts** | fl_chart | Hochwertige Visualisierungen für Statistiken |
+| **Code Gen** | Freezed & Build Runner | Reduziert Boilerplate-Code (Data Classes, Unions) |
 
-4.  **Mit GitHub verbinden (Remote hinzufügen):**
-    * Gehe im Menü auf **Git** -> **Manage Remotes...**.
-    * Klicke auf das **+**.
-    * Name: `origin`.
-    * URL: Füge hier die URL ein, die du eben bei GitHub kopiert hast.
-    * Klicke **OK**.
+## 📂 Ordnerstruktur (Feature-First)
 
-5.  **Hochladen (Push):**
-    * Gehe im Menü auf **Git** -> **Push...** (oder `Strg + Shift + K`).
-    * Klicke **Push**.
-    * Fertig! Dein Code ist jetzt auf GitHub.
+```text
+lib/
+│── core/               # Globale Konfigurationen & Utils
+│   ├── theme/          # Farben, Styles, Dark Mode Logik
+│   ├── database/       # Drift Datenbank Konfiguration
+│   └── utils/          # Helper (z.B. Datums-Formatierung)
+│
+│── features/           # Jedes Feature ist ein eigenes Modul
+│   ├── workout/        # Tracking Logik, Active Session
+│   ├── routines/       # Plan-Management (Push/Pull/Legs etc.)
+│   ├── history/        # Kalender & Vergangene Workouts
+│   └── statistics/     # Graphen & Analysen
+│       ├── data/       # Repositories & DTOs
+│       ├── domain/     # Models & Business Logic
+│       └── presentation/ # Widgets & Riverpod Controller
+│
+│── shared/             # Wiederverwendbare UI-Komponenten
+│   ├── widgets/        # Buttons, Inputs, Cards
+│   └── models/         # Gemeinsam genutzte Datenmodelle
+│
+└── main.dart           # Einstiegspunkt
+```
 
----
+## 🗺️ Roadmap & Milestones
 
-### 4. 📂 Die Struktur anlegen (Clean Setup)
+### 🏁 M1: Project Foundation
+- [ ] Setup Flutter, Dependencies & Linter
+- [ ] Datenbank-Schema (Drift) erstellen (Tabellen: Routines, Exercises, Sets)
+- [ ] Navigation (GoRouter) & Shell (BottomBar)
 
-Mache jetzt folgendes in Android Studio im Projekt-Explorer (unter `lib/`):
+### 🏋️ M2: Routinen & Übungen
+- [ ] CRUD für Übungen (Erstellen/Bearbeiten)
+- [ ] Seed-Script für Standard-Übungen
+- [ ] Routinen erstellen (z.B. "Push Day")
 
-1.  Lösche den ganzen Inhalt von `main.dart` (wir schreiben den später neu).
-2.  Rechtsklick auf `lib` -> **New** -> **Directory**.
-3.  Erstelle folgende Ordner nacheinander:
-    * `core`
-    * `core/theme`
-    * `core/database`
-    * `features`
-    * `shared`
-    * `shared/widgets`
+### ⏱️ M3: Workout Session (Core)
+- [ ] Live-Tracking Screen
+- [ ] Satz-Logik (kg, reps, RPE) & Rest-Timer
+- [ ] Speichern in DB
 
-4.  Erstelle jetzt eine neue Datei `README.md` im Hauptverzeichnis des Projekts (auf der gleichen Ebene wie `pubspec.yaml`, *nicht* in `lib`) und füge den Text von oben ein.
+### 📊 M4: History & Dashboard
+- [ ] Kalenderansicht der Workouts
+- [ ] Dashboard mit "Weekly Goal"
+- [ ] Detailansicht vergangener Trainings
+
+### 📈 M5: Advanced Stats
+- [ ] Volumen-Berechnung
+- [ ] 1RM Progress Charts
+- [ ] Muskelgruppen-Split Chart
+
+Projekt erstellt von Tom H
