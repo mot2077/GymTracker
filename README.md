@@ -41,3 +41,33 @@ lib/
 │   └── models/         # Gemeinsam genutzte Datenmodelle
 │
 └── main.dart           # Einstiegspunkt
+```
+
+## 🗺️ Roadmap & Milestones
+
+### 🏁 M1: Project Foundation
+- [ ] Setup Flutter, Dependencies & Linter
+- [ ] Datenbank-Schema (Drift) erstellen (Tabellen: Routines, Exercises, Sets)
+- [ ] Navigation (GoRouter) & Shell (BottomBar)
+
+### 🏋️ M2: Routinen & Übungen
+- [ ] CRUD für Übungen (Erstellen/Bearbeiten)
+- [ ] Seed-Script für Standard-Übungen
+- [ ] Routinen erstellen (z.B. "Push Day")
+
+### ⏱️ M3: Workout Session (Core)
+- [ ] Live-Tracking Screen
+- [ ] Satz-Logik (kg, reps, RPE) & Rest-Timer
+- [ ] Speichern in DB
+
+### 📊 M4: History & Dashboard
+- [ ] Kalenderansicht der Workouts
+- [ ] Dashboard mit "Weekly Goal"
+- [ ] Detailansicht vergangener Trainings
+
+### 📈 M5: Advanced Stats
+- [ ] Volumen-Berechnung
+- [ ] 1RM Progress Charts
+- [ ] Muskelgruppen-Split Chart
+
+Projekt erstellt von Tom H
