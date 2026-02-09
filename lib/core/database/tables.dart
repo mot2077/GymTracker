@@ -1,30 +1,30 @@
 import 'package:drift/drift.dart';
 
-// 1. Der Katalog aller möglichen Übungen
+import 'models/exercise_type.dart';
+
+// 1. Exercises
 class Exercises extends Table {
   IntColumn get id => integer().autoIncrement()();
-
   TextColumn get name => text().withLength(min: 1, max: 100)();
 
   TextColumn get targetMuscleGroup =>
-      text().nullable()(); // z.B. "Chest", "Legs"
-  TextColumn get primaryEquipment =>
-      text().nullable()(); // z.B. "Barbell", "Dumbbell"
-  BoolColumn get isCustom =>
-      boolean().withDefault(const Constant(false))(); // Vom User erstellt?
+      text().nullable()(); // "Chest", "Back", etc.
+  TextColumn get primaryEquipment => text().nullable()();
+
+  BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
+
+  // Stores which fields are needed (0=WeightReps, 1=RepOnly, etc.)
+  IntColumn get logType => intEnum<ExerciseLogType>()();
 }
 
-// 2. Definition von Routinen (z.B. "Push Day")
+// 2. Routines
 class Routines extends Table {
   IntColumn get id => integer().autoIncrement()();
-
   TextColumn get name => text().withLength(min: 1, max: 50)();
-
   TextColumn get description => text().nullable()();
 }
 
-// 3. Verknüpfung: Welche Übungen gehören zu welcher Routine?
-// Dies ist eine "Many-to-Many" Beziehungstabelle.
+// 3. RoutineExercises (Many-to-Many)
 class RoutineExercises extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -34,48 +34,46 @@ class RoutineExercises extends Table {
   IntColumn get exerciseId =>
       integer().references(Exercises, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get orderIndex =>
-      integer()(); // Damit die Übungen in der richtigen Reihenfolge erscheinen
+  IntColumn get orderIndex => integer()();
 }
 
-// 4. Ein durchgeführtes Workout (Die Session)
+// 4. Workouts (The Session)
 class Workouts extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  DateTimeColumn get date => dateTime()(); // Wann fand es statt?
-  IntColumn get durationInSeconds =>
-      integer().nullable()(); // Wie lange dauerte es?
-  TextColumn get note => text().nullable()(); // "Fühlte mich heute schwach"
+  DateTimeColumn get date => dateTime()();
 
-  // Optional: Wenn das Workout auf einer Routine basierte
-  IntColumn get sourceRoutineId => integer().nullable().references(
-    Routines,
-    #id,
-    onDelete: KeyAction.setNull,
-  )();
+  IntColumn get durationInSeconds => integer().nullable()();
+
+  TextColumn get note => text().nullable()(); // General workout note
+  IntColumn get sourceRoutineId =>
+      integer().nullable().references(
+          Routines, #id, onDelete: KeyAction.setNull)();
 }
 
-// 5. Die eigentlichen Daten: Sätze
+// 5. WorkoutSets ( The Data)
 class WorkoutSets extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  // Zu welchem Workout gehört dieser Satz?
   IntColumn get workoutId =>
       integer().references(Workouts, #id, onDelete: KeyAction.cascade)();
-
-  // Welche Übung war es?
   IntColumn get exerciseId => integer().references(Exercises, #id)();
 
-  // Die Daten des Satzes
-  RealColumn get weight => real()(); // Double, weil 22.5kg möglich sind
-  IntColumn get reps => integer()();
+  // Flexible Data Fields (nullable depending on logType)
+  RealColumn get weight => real().nullable()();
 
-  IntColumn get rpe =>
-      integer().nullable()(); // Rate of Perceived Exertion (optional)
+  IntColumn get reps => integer().nullable()();
 
-  // Ist es ein Warmup-Satz? (Wichtig für Statistiken - Warmup zählt oft nicht zum Volumen)
+  IntColumn get durationInSeconds => integer().nullable()();
+
+  RealColumn get distanceInKm => real().nullable()();
+
+  IntColumn get calories => integer().nullable()();
+
+  // Meta Data
+  IntColumn get rpe => integer().nullable()();
   BoolColumn get isWarmup => boolean().withDefault(const Constant(false))();
 
-  // Wann wurde der Satz abgeschlossen? (Für den Rest-Timer)
+  TextColumn get note => text().nullable()(); // NEU: Note per Set
   DateTimeColumn get completedAt => dateTime().nullable()();
 }

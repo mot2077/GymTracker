@@ -7,6 +7,9 @@ import 'package:gym_tracker/features/history/history_screen.dart';
 import 'package:gym_tracker/features/home/home_screen.dart';
 import 'package:gym_tracker/features/stats/stats_screen.dart';
 
+import '../../features/exercises/exercise_edit_screen.dart';
+import '../database/app_database.dart';
+
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -56,6 +59,15 @@ final goRouter = GoRouter(
           ],
         ),
       ],
+    ),
+    // Neuer Edit Screen (Top Level Route, verdeckt Bottom Bar)
+    GoRoute(
+      path: '/edit-exercise',
+      builder: (context, state) {
+        // Wir holen das Exercise Objekt aus dem "extra" Parameter
+        final exercise = state.extra as Exercise?;
+        return ExerciseEditScreen(exercise: exercise);
+      },
     ),
   ],
 );
