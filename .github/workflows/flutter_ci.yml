@@ -1,0 +1,50 @@
+name: Flutter CI
+
+# Wann soll das laufen? Bei jedem Push auf 'main' und bei Pull Requests
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Code auschecken
+      - uses: actions/checkout@v4
+
+      # 2. Java installieren (wird für Android-Builds im Hintergrund gebraucht)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Flutter installieren
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # Optional: Version festpinnen, falls nötig
+          # flutter-version: '3.19.0'
+
+      # 4. Abhängigkeiten laden
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 5. Code Generation ausführen (WICHTIG für Riverpod & Drift!)
+      # Da wir generated files (.g.dart) meist nicht committen, müssen sie hier gebaut werden.
+      - name: Run Build Runner
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # 6. Prüfen, ob der Code sauber formatiert ist
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      # 7. Linter laufen lassen (Analysieren)
+      - name: Analyze project source
+        run: flutter analyze
+
+      # 8. Tests ausführen (falls du welche schreibst)
+      - name: Run tests
+        run: flutter test
