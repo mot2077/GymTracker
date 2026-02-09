@@ -35,6 +35,8 @@ class RoutineExercises extends Table {
       integer().references(Exercises, #id, onDelete: KeyAction.cascade)();
 
   IntColumn get orderIndex => integer()();
+
+  IntColumn get sets => integer().withDefault(const Constant(1))();
 }
 
 // 4. Workouts (The Session)
