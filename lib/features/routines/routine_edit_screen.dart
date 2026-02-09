@@ -165,7 +165,7 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
                   TextButton.icon(
                     onPressed: _pickExercises,
                     icon: const Icon(Icons.add),
-                    label: const Text("Add / Remove"),
+                    label: const Text("Add"),
                   ),
                 ],
               ),
