@@ -23,13 +23,13 @@ class ScaffoldWithNav extends StatelessWidget {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.fitness_center),
-            label: 'Routinen',
+            label: 'Routines',
           ),
-          NavigationDestination(icon: Icon(Icons.list), label: 'Übungen'),
-          NavigationDestination(icon: Icon(Icons.history), label: 'Historie'),
+          NavigationDestination(icon: Icon(Icons.list), label: 'Exercises'),
+          NavigationDestination(icon: Icon(Icons.history), label: 'History'),
           NavigationDestination(
             icon: Icon(Icons.bar_chart),
-            label: 'Statistik',
+            label: 'Statistics',
           ),
         ],
       ),
