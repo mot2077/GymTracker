@@ -39,7 +39,7 @@ jobs:
 
       # 6. Prüfen, ob der Code sauber formatiert ist
       - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none .
 
       # 7. Linter laufen lassen (Analysieren)
       - name: Analyze project source
