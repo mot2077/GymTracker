@@ -19,9 +19,9 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
   late TextEditingController _nameController;
   late TextEditingController _descController;
 
-  // Unsere Liste enthält jetzt Übung + Sätze
   List<RoutineExerciseData> _selectedExercises = [];
 
+  // Helper: Sind wir im Bearbeitungs-Modus (Existierende Routine)?
   bool get _isEditing => widget.routineData != null;
 
   @override
@@ -33,7 +33,6 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
         text: widget.routineData?.routine.description ?? "");
 
     if (_isEditing) {
-      // Kopie der Liste erstellen, damit wir bearbeiten können
       _selectedExercises = List.from(widget.routineData!.exercises);
     }
   }
@@ -61,18 +60,14 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
 
     if (resultIds != null) {
       setState(() {
-        // 1. Gelöschte entfernen
         _selectedExercises.removeWhere((ex) =>
         !resultIds.contains(ex.exercise.id));
 
-        // 2. Neue hinzufügen (mit Standard 1 Satz)
-        // Wir filtern IDs, die noch NICHT in der aktuellen Liste sind
         final newIds = resultIds.where((id) => !currentIds.contains(id));
-
         for (var id in newIds) {
           final exerciseObj = allExercises.firstWhere((e) => e.id == id);
-          _selectedExercises.add(RoutineExerciseData(
-              exercise: exerciseObj, sets: 1)); // Default: 1 Set
+          _selectedExercises.add(
+              RoutineExerciseData(exercise: exerciseObj, sets: 1));
         }
       });
     }
@@ -89,7 +84,6 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
       final repo = ref.read(routineRepositoryProvider);
 
       if (_isEditing) {
-        // UPDATE (ID behalten!)
         await repo.updateRoutine(
           routineId: widget.routineData!.routine.id,
           name: _nameController.text,
@@ -97,7 +91,6 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
           exercises: _selectedExercises,
         );
       } else {
-        // CREATE
         await repo.createRoutine(
           name: _nameController.text,
           description: _descController.text,
@@ -109,7 +102,6 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
     }
   }
 
-  // Löschen Funktion
   Future<void> _deleteRoutine() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -136,11 +128,26 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
     }
   }
 
+  // --- START WORKOUT LOGIC (Vorbereitung) ---
+  void _startWorkout() {
+    // Hier navigieren wir später zum ActiveWorkoutScreen
+    // Für jetzt zeigen wir nur Feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Starting Workout... (Next Step!) 🚀"),
+          backgroundColor: Colors.green,
+        )
+    );
+
+    // TODO: context.push('/active-workout', extra: widget.routineData);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? "Edit Routine" : "New Routine"),
+        // ÄNDERUNG 1: Titel angepasst
+        title: Text(_isEditing ? "Routine" : "New Routine"),
         actions: [
           if (_isEditing)
             IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -168,28 +175,57 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
                     decoration: const InputDecoration(
                         labelText: "Description (Optional)",
                         border: OutlineInputBorder()),
+                    maxLines: 2,
                   ),
+
+                  // ÄNDERUNG 2: Start Button nur anzeigen, wenn Routine existiert
+                  if (_isEditing) ...[
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _startWorkout,
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text("START WORKOUT", style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          // Auffällige Farbe
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ]
                 ],
               ),
             ),
+
             const Divider(),
+
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0, vertical: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text("Exercises & Sets", style: TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold)),
+                  // Bearbeiten Button etwas dezenter machen, da der Fokus auf START liegt
                   TextButton.icon(
                     onPressed: _pickExercises,
-                    icon: const Icon(Icons.add),
-                    label: const Text("Manage"),
+                    icon: const Icon(Icons.edit, size: 18),
+                    label: const Text("Edit List"),
+                    style: TextButton.styleFrom(foregroundColor: Colors.grey),
                   )
                 ],
               ),
             ),
 
-            // Drag & Drop Liste mit Set-Counter
+            // Drag & Drop Liste
             Expanded(
               child: ReorderableListView.builder(
                 padding: const EdgeInsets.only(bottom: 80),
@@ -205,7 +241,7 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
                   final data = _selectedExercises[index];
 
                   return Card(
-                    key: ValueKey(data.exercise.id), // Wichtig für Reorder
+                    key: ValueKey(data.exercise.id),
                     margin: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 4),
                     child: ListTile(
@@ -219,7 +255,6 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // SETS COUNTER
                           const Text("Sets: ", style: TextStyle(
                               fontSize: 12, color: Colors.grey)),
                           IconButton(
@@ -228,23 +263,19 @@ class _RoutineEditScreenState extends ConsumerState<RoutineEditScreen> {
                             onPressed: () {
                               if (data.sets > 1) {
                                 setState(() {
-                                  // Update Set Count
                                   _selectedExercises[index] =
                                       data.copyWith(sets: data.sets - 1);
                                 });
                               }
                             },
                           ),
-                          Text(
-                              "${data.sets}",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16)
-                          ),
+                          Text("${data.sets}", style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
                           IconButton(
                             icon: const Icon(
                                 Icons.add_circle_outline, size: 20),
                             onPressed: () {
-                              if (data.sets < 10) { // Limit 10 Sets
+                              if (data.sets < 10) {
                                 setState(() {
                                   _selectedExercises[index] =
                                       data.copyWith(sets: data.sets + 1);
